@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"hzip/input"
 	"hzip/output"
+
+	"github.com/schollz/progressbar/v3"
 )
 
 type Compressor struct {
@@ -15,7 +17,13 @@ type Compressor struct {
 
 func (compressor *Compressor) Compress() error {
 	fmt.Println("[INFO] Creating frequency table")
+	bar := progressbar.NewOptions(
+		len(compressor.Inputs),
+		progressbar.OptionClearOnFinish(),
+		progressbar.OptionSetPredictTime(true),
+	)
 	for _, input_obj := range compressor.Inputs {
+		bar.Add(1)
 		data, err := input_obj.GetData()
 		if err != nil {
 			fmt.Println(err)
@@ -25,6 +33,7 @@ func (compressor *Compressor) Compress() error {
 			compressor.frequency_table.Increment(current_byte)
 		}
 	}
+	bar.Finish()
 	return errors.New("[ERROR] Compression not fully implemented")
 }
 
