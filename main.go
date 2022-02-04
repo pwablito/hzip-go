@@ -8,13 +8,10 @@ import (
 	"os"
 )
 
-func print_usage() {
-	fmt.Println("Usage: hzip <output_file> <input_file>")
-}
-
 func main() {
 	if len(os.Args) < 3 {
-		print_usage()
+		fmt.Println("Usage: hzip <output_file> <input_file>")
+		fmt.Println("[FATAL] Invalid arguments")
 		os.Exit(1)
 	}
 
@@ -23,22 +20,32 @@ func main() {
 	compressor.SetOutput(output.FileOutput{
 		Filename: output.GetOutputFilename(os.Args[1]),
 	})
+	fmt.Println("[INFO] Collecting input files")
 	for _, input_filename := range os.Args[2:] {
-		compressor.AddInput(input.FileInput{
-			Filename: input_filename,
-		})
+		objs, err := input.ExpandInput(input_filename)
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println("[FATAL] Input collection failed")
+			os.Exit(1)
+		}
+		for _, input_obj := range objs {
+			compressor.AddInput(input_obj)
+		}
 	}
 
+	fmt.Println("[INFO] Compressing")
 	err := compressor.Compress()
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("[ERROR] compression failed")
+		fmt.Println("[FATAL] Compression failed")
 		os.Exit(1)
 	}
+
+	fmt.Println("[INFO] Dumping archive")
 	err = compressor.Dump()
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("[ERROR] Dump failed")
+		fmt.Println("[FATAL] Dump failed")
 		os.Exit(1)
 	}
 }

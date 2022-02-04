@@ -7,5 +7,5 @@ type FileOutput struct {
 }
 
 func (file_output FileOutput) Write(data []byte) error {
-	return errors.New("not implemented")
+	return errors.New("[ERROR] Not implemented")
 }

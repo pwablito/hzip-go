@@ -18,13 +18,14 @@ func (compressor *Compressor) Compress() error {
 	for _, input_obj := range compressor.Inputs {
 		data, err := input_obj.GetData()
 		if err != nil {
+			fmt.Println(err)
 			return errors.New("[ERROR] Failed to read data from input")
 		}
 		for _, current_byte := range data {
 			compressor.frequency_table.Increment(current_byte)
 		}
 	}
-	return errors.New("[ERROR] not fully implemented")
+	return errors.New("[ERROR] Compression not fully implemented")
 }
 
 func (compressor *Compressor) Dump() error {
