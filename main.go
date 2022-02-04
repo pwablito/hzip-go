@@ -31,12 +31,14 @@ func main() {
 
 	err := compressor.Compress()
 	if err != nil {
-		fmt.Println("Compression failed")
+		fmt.Println(err)
+		fmt.Println("[ERROR] compression failed")
 		os.Exit(1)
 	}
 	err = compressor.Dump()
 	if err != nil {
-		fmt.Println("Dump failed")
+		fmt.Println(err)
+		fmt.Println("[ERROR] Dump failed")
 		os.Exit(1)
 	}
 }
