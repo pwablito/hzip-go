@@ -22,12 +22,14 @@ func (file_input FileInput) GetData() ([]byte, error) {
 
 func ExpandInput(filename string) ([]Input, error) {
 	inputs := make([]Input, 0)
-	stat_obj, err := os.Stat(filename)
+	stat_obj, err := os.Lstat(filename)
 	if err != nil {
 		fmt.Println("[ERROR] ", err)
 		return nil, errors.New("[ERROR] Failed to open location")
 	}
-	if stat_obj.IsDir() {
+	if (stat_obj.Mode() & os.ModeSymlink) == os.ModeSymlink {
+		fmt.Println("[WARNING] Excluding symlink: " + filename)
+	} else if stat_obj.IsDir() {
 		subdirs, err := ioutil.ReadDir(filename)
 		if err != nil {
 			fmt.Println("[ERROR] Couldn't list directory " + filename)
