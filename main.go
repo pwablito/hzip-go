@@ -10,7 +10,6 @@ import (
 
 func print_usage() {
 	fmt.Println("Usage: hzip <output_file> <input_file>")
-
 }
 
 func main() {
@@ -19,23 +18,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	output_obj := output.FileOutput{
-		Filename: os.Args[1],
-	}
+	compressor := compression.CreateCompressor()
 
-	inputs := make([]input.Input, 0)
-
+	compressor.SetOutput(output.FileOutput{
+		Filename: output.GetOutputFilename(os.Args[1]),
+	})
 	for _, input_filename := range os.Args[2:] {
-		inputs = append(inputs, input.FileInput{
+		compressor.AddInput(input.FileInput{
 			Filename: input_filename,
 		})
 	}
 
-	compressor := compression.Compressor{
-		Output: output_obj,
-		Inputs: inputs,
+	err := compressor.Compress()
+	if err != nil {
+		fmt.Println("Compression failed")
+		os.Exit(1)
 	}
-
-	compressor.Compress()
-	compressor.Dump()
+	err = compressor.Dump()
+	if err != nil {
+		fmt.Println("Dump failed")
+		os.Exit(1)
+	}
 }
