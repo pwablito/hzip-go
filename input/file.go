@@ -9,6 +9,7 @@ import (
 
 type FileInput struct {
 	Filename string
+	Meta     FileMeta
 }
 
 func (file_input FileInput) GetData() ([]byte, error) {
@@ -47,6 +48,9 @@ func ExpandInput(filename string) ([]Input, error) {
 		// TODO This may be a good place to verify that files are readable or error out
 		inputs = append(inputs, FileInput{
 			Filename: filename,
+			Meta: FileMeta{
+				Mode: stat_obj.Mode(),
+			},
 		})
 	}
 	return inputs, nil
