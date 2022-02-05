@@ -12,3 +12,7 @@ func (freq_table *FrequencyTable) Increment(key byte) {
 		freq_table.frequencies[key] = 1
 	}
 }
+
+func (freq_table *FrequencyTable) GetFrequencies() map[byte]int {
+	return freq_table.frequencies
+}
