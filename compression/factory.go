@@ -14,3 +14,9 @@ func CreateFrequencyTable() FrequencyTable {
 		frequencies: make(map[byte]int),
 	}
 }
+
+func CreateKeyTable() KeyTable {
+	return KeyTable{
+		table: make(map[string]string),
+	}
+}

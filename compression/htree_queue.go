@@ -2,7 +2,7 @@ package compression
 
 type HtreeQueueItem struct {
 	Priority int
-	// Tree     HuffmanTree
+	Tree     *HuffmanTree
 }
 
 func (hqi HtreeQueueItem) Less(item QueueItem) bool {

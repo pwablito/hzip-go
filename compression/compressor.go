@@ -34,6 +34,30 @@ func (compressor *Compressor) Compress() error {
 		}
 	}
 	bar.Finish()
+	fmt.Println("[INFO] Constructing Huffman Tree")
+	pq := NewPriorityQueue()
+	for data, frequency := range compressor.frequency_table.GetFrequencies() {
+		pq.Push(HtreeQueueItem{
+			Priority: frequency,
+			Tree: &HuffmanTree{
+				Head: LeafNode{
+					Freq:     frequency,
+					LeafData: data,
+				},
+				Frequency: frequency,
+			},
+		})
+	}
+	for pq.Len() > 1 {
+		new_tree := CombineTrees(pq.Pop().(HtreeQueueItem).Tree, pq.Pop().(HtreeQueueItem).Tree)
+		pq.Push(HtreeQueueItem{
+			Priority: new_tree.Frequency,
+			Tree:     new_tree,
+		})
+	}
+	final_tree := pq.Pop().(HtreeQueueItem).Tree
+	key_table := CreateKeyTable()
+
 	return errors.New("[ERROR] Compression not fully implemented")
 }
 

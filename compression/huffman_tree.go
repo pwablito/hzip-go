@@ -1,7 +1,8 @@
 package compression
 
 type HuffmanTree struct {
-	Head HTreeNode
+	Head      HTreeNode
+	Frequency int
 }
 
 type HTreeNode interface {
@@ -10,6 +11,22 @@ type HTreeNode interface {
 	Data() byte
 	Left() *HTreeNode
 	Right() *HTreeNode
+}
+
+func CombineTrees(tree_1 *HuffmanTree, tree_2 *HuffmanTree) *HuffmanTree {
+	new_tree := HuffmanTree{
+		Frequency: tree_1.Frequency + tree_2.Frequency,
+	}
+	head_node := TreeNode{}
+	if tree_1.Frequency < tree_2.Frequency {
+		head_node.LeftChild = &tree_1.Head
+		head_node.RightChild = &tree_2.Head
+	} else {
+		head_node.LeftChild = &tree_2.Head
+		head_node.RightChild = &tree_1.Head
+	}
+	new_tree.Head = head_node
+	return &new_tree
 }
 
 type LeafNode struct {
