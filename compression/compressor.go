@@ -15,7 +15,7 @@ type Compressor struct {
 	frequency_table FrequencyTable
 }
 
-func (compressor *Compressor) Compress() error {
+func (compressor *Compressor) Process() error {
 	fmt.Println("[INFO] Creating frequency table")
 	bar := progressbar.NewOptions(
 		len(compressor.Inputs),
@@ -57,6 +57,11 @@ func (compressor *Compressor) Compress() error {
 	}
 	final_tree := pq.Pop().(HtreeQueueItem).Tree
 	key_table := CreateKeyTable()
+	err := key_table.ReadTree(final_tree)
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("[ERROR] Failed to generate keys from Huffman tree")
+	}
 
 	return errors.New("[ERROR] Compression not fully implemented")
 }

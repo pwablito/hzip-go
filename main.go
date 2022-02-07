@@ -34,7 +34,7 @@ func main() {
 	}
 
 	fmt.Println("[INFO] Compressing")
-	err := compressor.Compress()
+	err := compressor.Process()
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println("[FATAL] Compression failed")

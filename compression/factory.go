@@ -17,6 +17,6 @@ func CreateFrequencyTable() FrequencyTable {
 
 func CreateKeyTable() KeyTable {
 	return KeyTable{
-		table: make(map[string]string),
+		table: make(map[string]KeyTableData),
 	}
 }
