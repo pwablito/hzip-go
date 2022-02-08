@@ -9,7 +9,7 @@ import (
 
 type FileInput struct {
 	Filename string
-	Meta     FileMeta
+	Meta     Meta
 }
 
 func (file_input FileInput) GetData() ([]byte, error) {
