@@ -1,18 +1,28 @@
-package compression
+package util
 
-import "testing"
+import (
+	"testing"
+)
+
+type QueueItemImpl struct {
+	Priority int
+}
+
+func (hqi QueueItemImpl) Less(item QueueItem) bool {
+	return hqi.Priority < item.(QueueItemImpl).Priority
+}
 
 func TestHtreePriorityQueue(t *testing.T) {
-	item_1 := HtreeQueueItem{
+	item_1 := QueueItemImpl{
 		Priority: 1,
 	}
-	item_3 := HtreeQueueItem{
+	item_3 := QueueItemImpl{
 		Priority: 3,
 	}
-	item_5 := HtreeQueueItem{
+	item_5 := QueueItemImpl{
 		Priority: 5,
 	}
-	item_8 := HtreeQueueItem{
+	item_8 := QueueItemImpl{
 		Priority: 8,
 	}
 	pq := NewPriorityQueue()

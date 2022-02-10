@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hzip/input"
 	"hzip/output"
+	"hzip/util"
 
 	"github.com/schollz/progressbar/v3"
 )
@@ -35,7 +36,7 @@ func (compressor *Compressor) Process() error {
 	}
 	bar.Finish()
 	fmt.Println("[INFO] Constructing Huffman Tree")
-	pq := NewPriorityQueue()
+	pq := util.NewPriorityQueue()
 	for data, frequency := range compressor.frequency_table.GetFrequencies() {
 		pq.Push(HtreeQueueItem{
 			Priority: frequency,

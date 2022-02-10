@@ -1,6 +1,6 @@
 // NOTE: Taken from the internet
 
-package compression
+package util
 
 import "container/heap"
 
