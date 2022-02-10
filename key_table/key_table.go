@@ -1,8 +1,9 @@
-package compression
+package key_table
 
 import (
 	"bytes"
 	"errors"
+	"hzip/huffman_tree"
 
 	"github.com/dgryski/go-bitstream"
 )
@@ -31,13 +32,13 @@ func (table KeyTable) Get(key bytes.Buffer, length int) (*KeyTableData, error) {
 	return &item, nil
 }
 
-func (table *KeyTable) ReadTree(tree *HuffmanTree) error {
+func (table *KeyTable) ReadTree(tree *huffman_tree.HuffmanTree) error {
 	var buf bytes.Buffer
 	table.AddSubtreeWithPrefix(buf, 0, &tree.Head)
 	return nil
 }
 
-func (table *KeyTable) AddSubtreeWithPrefix(prefix bytes.Buffer, prefix_len int, tree_node *HTreeNode) {
+func (table *KeyTable) AddSubtreeWithPrefix(prefix bytes.Buffer, prefix_len int, tree_node *huffman_tree.HTreeNode) {
 	if (*tree_node).IsLeaf() {
 		table.Add(prefix, string((*tree_node).Data()), prefix_len)
 	} else {

@@ -1,4 +1,4 @@
-package compression
+package huffman_tree
 
 type HuffmanTree struct {
 	Head      HTreeNode

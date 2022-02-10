@@ -1,6 +1,6 @@
 // NOTE: Taken from the internet
 
-package util
+package priority_queue
 
 import "container/heap"
 

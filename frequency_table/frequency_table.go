@@ -1,4 +1,4 @@
-package compression
+package frequency_table
 
 type FrequencyTable struct {
 	frequencies map[byte]int

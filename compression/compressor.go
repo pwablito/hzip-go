@@ -3,9 +3,12 @@ package compression
 import (
 	"errors"
 	"fmt"
+	"hzip/frequency_table"
+	"hzip/huffman_tree"
 	"hzip/input"
+	"hzip/key_table"
 	"hzip/output"
-	"hzip/util"
+	"hzip/priority_queue"
 
 	"github.com/schollz/progressbar/v3"
 )
@@ -13,7 +16,7 @@ import (
 type Compressor struct {
 	Output          output.Output
 	Inputs          []input.Input
-	frequency_table FrequencyTable
+	frequency_table frequency_table.FrequencyTable
 }
 
 func (compressor *Compressor) Process() error {
@@ -36,12 +39,12 @@ func (compressor *Compressor) Process() error {
 	}
 	bar.Finish()
 	fmt.Println("[INFO] Constructing Huffman Tree")
-	pq := util.NewPriorityQueue()
+	pq := priority_queue.NewPriorityQueue()
 	for data, frequency := range compressor.frequency_table.GetFrequencies() {
-		pq.Push(HtreeQueueItem{
+		pq.Push(huffman_tree.HtreeQueueItem{
 			Priority: frequency,
-			Tree: &HuffmanTree{
-				Head: LeafNode{
+			Tree: &huffman_tree.HuffmanTree{
+				Head: huffman_tree.LeafNode{
 					Freq:     frequency,
 					LeafData: data,
 				},
@@ -50,21 +53,22 @@ func (compressor *Compressor) Process() error {
 		})
 	}
 	for pq.Len() > 1 {
-		new_tree := CombineTrees(pq.Pop().(HtreeQueueItem).Tree, pq.Pop().(HtreeQueueItem).Tree)
-		pq.Push(HtreeQueueItem{
+		new_tree := huffman_tree.CombineTrees(pq.Pop().(huffman_tree.HtreeQueueItem).Tree, pq.Pop().(huffman_tree.HtreeQueueItem).Tree)
+		pq.Push(huffman_tree.HtreeQueueItem{
 			Priority: new_tree.Frequency,
 			Tree:     new_tree,
 		})
 	}
-	final_tree := pq.Pop().(HtreeQueueItem).Tree
-	key_table := CreateKeyTable()
+	final_tree := pq.Pop().(huffman_tree.HtreeQueueItem).Tree
+	key_table := key_table.CreateKeyTable()
 	err := key_table.ReadTree(final_tree)
 	if err != nil {
 		fmt.Println(err)
 		return errors.New("[ERROR] Failed to generate keys from Huffman tree")
 	}
 
-	return errors.New("[ERROR] Compression not fully implemented")
+	// return errors.New("[ERROR] Compression not fully implemented")
+	return nil
 }
 
 func (compressor *Compressor) Dump() error {
