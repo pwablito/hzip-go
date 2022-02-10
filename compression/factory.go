@@ -1,6 +1,8 @@
 package compression
 
-import "hzip/input"
+import (
+	"hzip/input"
+)
 
 func CreateCompressor() Compressor {
 	return Compressor{

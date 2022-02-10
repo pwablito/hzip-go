@@ -1,5 +1,12 @@
 package compression
 
+import (
+	"bytes"
+	"errors"
+
+	"github.com/dgryski/go-bitstream"
+)
+
 type KeyTableData struct {
 	length int // bits
 	data   string
@@ -9,27 +16,58 @@ type KeyTable struct {
 	table map[string]KeyTableData
 }
 
-func (table *KeyTable) Add(key string, data string, length int) {
-	table.table[key] = KeyTableData{
+func (table *KeyTable) Add(key bytes.Buffer, data string, length int) {
+	table.table[key.String()] = KeyTableData{
 		length: length,
 		data:   data,
 	}
 }
 
+func (table KeyTable) Get(key bytes.Buffer, length int) (*KeyTableData, error) {
+	item, ok := table.table[key.String()]
+	if !ok {
+		return nil, errors.New("couldn't find item")
+	}
+	return &item, nil
+}
+
 func (table *KeyTable) ReadTree(tree *HuffmanTree) error {
-	table.AddSubtreeWithPrefix("", &tree.Head)
+	var buf bytes.Buffer
+	table.AddSubtreeWithPrefix(buf, 0, &tree.Head)
 	return nil
 }
 
-func (table *KeyTable) AddSubtreeWithPrefix(prefix string, tree_node *HTreeNode) {
+func (table *KeyTable) AddSubtreeWithPrefix(prefix bytes.Buffer, prefix_len int, tree_node *HTreeNode) {
 	if (*tree_node).IsLeaf() {
-		table.Add(prefix, string((*tree_node).Data()), len(prefix))
+		table.Add(prefix, string((*tree_node).Data()), prefix_len)
 	} else {
 		if (*tree_node).Left() != nil {
-			table.AddSubtreeWithPrefix(prefix+"0", (*tree_node).Left())
+			var buf bytes.Buffer
+			writer := bitstream.NewWriter(&buf)
+			CopyNumBitsToBitstreamWriter(prefix, writer, prefix_len)
+			writer.WriteBit(bitstream.Zero)
+			writer.Flush(bitstream.Zero)
+			table.AddSubtreeWithPrefix(buf, prefix_len+1, (*tree_node).Left())
 		}
 		if (*tree_node).Right() != nil {
-			table.AddSubtreeWithPrefix(prefix+"1", (*tree_node).Right())
+			var buf bytes.Buffer
+			writer := bitstream.NewWriter(&buf)
+			CopyNumBitsToBitstreamWriter(prefix, writer, prefix_len)
+			writer.WriteBit(bitstream.One)
+			writer.Flush(bitstream.Zero)
+			table.AddSubtreeWithPrefix(buf, prefix_len+1, (*tree_node).Left())
 		}
 	}
+}
+
+func CopyNumBitsToBitstreamWriter(in bytes.Buffer, out *bitstream.BitWriter, num_bits int) error {
+	in_stream := bitstream.NewReader(bytes.NewReader(in.Bytes()))
+	for i := 0; i < num_bits; i++ {
+		bit, err := in_stream.ReadBit()
+		if err != nil {
+			return err
+		}
+		out.WriteBit(bit)
+	}
+	return nil
 }
