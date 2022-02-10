@@ -66,8 +66,6 @@ func (compressor *Compressor) Process() error {
 		fmt.Println(err)
 		return errors.New("[ERROR] Failed to generate keys from Huffman tree")
 	}
-
-	// return errors.New("[ERROR] Compression not fully implemented")
 	return nil
 }
 
