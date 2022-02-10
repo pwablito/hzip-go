@@ -3,7 +3,7 @@ package key_table
 import (
 	"bytes"
 	"errors"
-	"hzip/huffman_tree"
+	"hzip/src/huffman_tree"
 
 	"github.com/dgryski/go-bitstream"
 )

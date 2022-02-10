@@ -1,6 +1,6 @@
 package huffman_tree
 
-import "hzip/priority_queue"
+import "hzip/src/priority_queue"
 
 type HtreeQueueItem struct {
 	Priority int

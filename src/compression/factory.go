@@ -1,8 +1,8 @@
 package compression
 
 import (
-	"hzip/frequency_table"
-	"hzip/input"
+	"hzip/src/frequency_table"
+	"hzip/src/input"
 )
 
 func CreateCompressor() Compressor {

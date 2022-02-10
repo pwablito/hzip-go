@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"hzip/compression"
-	"hzip/input"
-	"hzip/output"
+	"hzip/src/compression"
+	"hzip/src/input"
+	"hzip/src/output"
 	"os"
 )
 

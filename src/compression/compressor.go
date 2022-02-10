@@ -3,12 +3,12 @@ package compression
 import (
 	"errors"
 	"fmt"
-	"hzip/frequency_table"
-	"hzip/huffman_tree"
-	"hzip/input"
-	"hzip/key_table"
-	"hzip/output"
-	"hzip/priority_queue"
+	"hzip/src/frequency_table"
+	"hzip/src/huffman_tree"
+	"hzip/src/input"
+	"hzip/src/key_table"
+	"hzip/src/output"
+	"hzip/src/priority_queue"
 
 	"github.com/schollz/progressbar/v3"
 )
