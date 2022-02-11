@@ -10,15 +10,15 @@ import (
 
 type KeyTableData struct {
 	length int // bits
-	data   string
+	data   bytes.Buffer
 }
 
 type KeyTable struct {
 	table map[string]KeyTableData
 }
 
-func (table *KeyTable) Add(key bytes.Buffer, data string, length int) {
-	table.table[key.String()] = KeyTableData{
+func (table *KeyTable) Add(key string, data bytes.Buffer, length int) {
+	table.table[key] = KeyTableData{
 		length: length,
 		data:   data,
 	}
@@ -40,7 +40,7 @@ func (table *KeyTable) ReadTree(tree *huffman_tree.HuffmanTree) error {
 
 func (table *KeyTable) AddSubtreeWithPrefix(prefix bytes.Buffer, prefix_len int, tree_node *huffman_tree.HTreeNode) {
 	if (*tree_node).IsLeaf() {
-		table.Add(prefix, string((*tree_node).Data()), prefix_len)
+		table.Add(string((*tree_node).Data()), prefix, prefix_len)
 	} else {
 		if (*tree_node).Left() != nil {
 			var buf bytes.Buffer
