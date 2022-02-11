@@ -9,23 +9,23 @@ import (
 )
 
 type KeyTableData struct {
-	length int // bits
-	data   bytes.Buffer
+	Length int // bits
+	Data   bytes.Buffer
 }
 
 type KeyTable struct {
-	table map[string]KeyTableData
+	table map[byte]KeyTableData
 }
 
-func (table *KeyTable) Add(key string, data bytes.Buffer, length int) {
+func (table *KeyTable) Add(key byte, data bytes.Buffer, length int) {
 	table.table[key] = KeyTableData{
-		length: length,
-		data:   data,
+		Length: length,
+		Data:   data,
 	}
 }
 
-func (table KeyTable) Get(key bytes.Buffer, length int) (*KeyTableData, error) {
-	item, ok := table.table[key.String()]
+func (table KeyTable) Get(key byte) (*KeyTableData, error) {
+	item, ok := table.table[key]
 	if !ok {
 		return nil, errors.New("couldn't find item")
 	}
@@ -40,7 +40,7 @@ func (table *KeyTable) ReadTree(tree *huffman_tree.HuffmanTree) error {
 
 func (table *KeyTable) AddSubtreeWithPrefix(prefix bytes.Buffer, prefix_len int, tree_node *huffman_tree.HTreeNode) {
 	if (*tree_node).IsLeaf() {
-		table.Add(string((*tree_node).Data()), prefix, prefix_len)
+		table.Add((*tree_node).Data(), prefix, prefix_len)
 	} else {
 		if (*tree_node).Left() != nil {
 			var buf bytes.Buffer

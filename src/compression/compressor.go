@@ -1,6 +1,7 @@
 package compression
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"hzip/src/frequency_table"
@@ -10,6 +11,7 @@ import (
 	"hzip/src/output"
 	"hzip/src/priority_queue"
 
+	"github.com/dgryski/go-bitstream"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -17,6 +19,7 @@ type Compressor struct {
 	Output          output.Output
 	Inputs          []input.Input
 	frequency_table frequency_table.FrequencyTable
+	key_table       key_table.KeyTable
 }
 
 func (compressor *Compressor) Process() error {
@@ -60,8 +63,8 @@ func (compressor *Compressor) Process() error {
 		})
 	}
 	final_tree := pq.Pop().(huffman_tree.HtreeQueueItem).Tree
-	key_table := key_table.CreateKeyTable()
-	err := key_table.ReadTree(final_tree)
+	compressor.key_table = key_table.CreateKeyTable()
+	err := compressor.key_table.ReadTree(final_tree)
 	if err != nil {
 		fmt.Println(err)
 		return errors.New("[ERROR] Failed to generate keys from Huffman tree")
@@ -70,7 +73,56 @@ func (compressor *Compressor) Process() error {
 }
 
 func (compressor *Compressor) Dump() error {
-	return errors.New("[ERROR] Not implemented")
+	err := compressor.Output.Open()
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("[ERROR] Couldn't open output")
+	}
+	defer compressor.Output.Close()
+	for _, input := range compressor.Inputs {
+		input_data, err := input.GetData()
+		if err != nil {
+			fmt.Println(err)
+			return errors.New("[ERROR] Failed to get data from input")
+		}
+		buffer, _, err := compressor.compress_buffer(input_data)
+		if err != nil {
+			fmt.Println(err)
+			return errors.New("[ERROR] Failed to compress buffer")
+		}
+		err = compressor.Output.Write(buffer.Bytes())
+		if err != nil {
+			fmt.Println(err)
+			return errors.New("[ERROR] Failed to write to output")
+		}
+	}
+	return nil
+}
+
+func (compressor *Compressor) compress_buffer(input_buffer []byte) (*bytes.Buffer, int, error) {
+	var output_buffer bytes.Buffer
+	total_bits := 0
+	output_writer := bitstream.NewWriter(&output_buffer)
+	for _, current_byte := range input_buffer {
+		data, err := compressor.key_table.Get(current_byte)
+		if err != nil {
+			return nil, 0, err
+		}
+		reader := bitstream.NewReader(&data.Data)
+		for i := 0; i < data.Length; i++ {
+			next_bit, err := reader.ReadBit()
+			if err != nil {
+				fmt.Println(err)
+				return nil, 0, errors.New("[ERROR] Couldn't read data from reader bitstream")
+			}
+			err = output_writer.WriteBit(next_bit)
+			if err != nil {
+				fmt.Println(err)
+				return nil, 0, errors.New("[ERROR] Couldn't write data to writer bitstream")
+			}
+		}
+	}
+	return &output_buffer, total_bits, nil
 }
 
 func (compressor *Compressor) AddInput(input_obj input.Input) {

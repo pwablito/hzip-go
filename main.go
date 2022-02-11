@@ -17,8 +17,9 @@ func main() {
 
 	compressor := compression.CreateCompressor()
 
-	compressor.SetOutput(output.FileOutput{
+	compressor.SetOutput(&output.FileOutput{
 		Filename: output.GetOutputFilename(os.Args[1]),
+		Mode:     0666,
 	})
 	fmt.Println("[INFO] Collecting input files")
 	for _, input_filename := range os.Args[2:] {
