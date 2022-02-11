@@ -56,7 +56,7 @@ func (table *KeyTable) AddSubtreeWithPrefix(prefix bytes.Buffer, prefix_len int,
 			CopyNumBitsToBitstreamWriter(prefix, writer, prefix_len)
 			writer.WriteBit(bitstream.One)
 			writer.Flush(bitstream.Zero)
-			table.AddSubtreeWithPrefix(buf, prefix_len+1, (*tree_node).Left())
+			table.AddSubtreeWithPrefix(buf, prefix_len+1, (*tree_node).Right())
 		}
 	}
 }
