@@ -79,23 +79,42 @@ func (compressor *Compressor) Dump() error {
 		return errors.New("[ERROR] Couldn't open output")
 	}
 	defer compressor.Output.Close()
-	for _, input := range compressor.Inputs {
-		input_data, err := input.GetData()
+	bar := progressbar.NewOptions(
+		len(compressor.Inputs),
+		progressbar.OptionClearOnFinish(),
+		progressbar.OptionSetPredictTime(true),
+	)
+	for _, input_obj := range compressor.Inputs {
+		bar.Add(1)
+		input_data, err := input_obj.GetData()
 		if err != nil {
 			fmt.Println(err)
 			return errors.New("[ERROR] Failed to get data from input")
 		}
-		buffer, _, err := compressor.compress_buffer(input_data)
+		content_buffer, _, err := compressor.compress_buffer(input_data)
 		if err != nil {
 			fmt.Println(err)
 			return errors.New("[ERROR] Failed to compress buffer")
 		}
-		err = compressor.Output.Write(buffer.Bytes())
+		var meta_buffer bytes.Buffer
+		meta_writer := bitstream.NewWriter(&meta_buffer)
+		meta_writer.WriteBits(uint64(len(input_obj.(input.FileInput).Filename)), 64)
+		for _, character := range input_obj.(input.FileInput).Filename {
+			meta_writer.WriteByte(byte(character))
+		}
+		meta_writer.WriteBits(uint64(content_buffer.Len()), 64)
+		err = compressor.Output.Write(meta_buffer.Bytes())
 		if err != nil {
 			fmt.Println(err)
-			return errors.New("[ERROR] Failed to write to output")
+			return errors.New("[ERROR] Failed to write metadata to output")
+		}
+		err = compressor.Output.Write(content_buffer.Bytes())
+		if err != nil {
+			fmt.Println(err)
+			return errors.New("[ERROR] Failed to write compressed buffer to output")
 		}
 	}
+	bar.Finish()
 	return nil
 }
 
