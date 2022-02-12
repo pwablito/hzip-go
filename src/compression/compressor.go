@@ -22,7 +22,7 @@ type Compressor struct {
 	key_table       key_table.KeyTable
 }
 
-func (compressor *Compressor) Process() error {
+func (compressor *Compressor) GenerateScheme() error {
 	fmt.Println("[INFO] Creating frequency table")
 	bar := progressbar.NewOptions(
 		len(compressor.Inputs),
@@ -72,7 +72,7 @@ func (compressor *Compressor) Process() error {
 	return nil
 }
 
-func (compressor *Compressor) Dump() error {
+func (compressor *Compressor) CompressToOutput() error {
 	err := compressor.Output.Open()
 	if err != nil {
 		fmt.Println(err)

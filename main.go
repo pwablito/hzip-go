@@ -38,18 +38,18 @@ func main() {
 			compressor.AddInput(input_obj)
 		}
 	}
-	// TODO Removeo duplicate inputs
+	// TODO Remove duplicate inputs
 
 	fmt.Println("[INFO] Compressing")
-	err = compressor.Process()
+	err = compressor.GenerateScheme()
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("[FATAL] Compression failed")
+		fmt.Println("[FATAL] Compression scheme generation failed")
 		os.Exit(1)
 	}
 
-	fmt.Println("[INFO] Dumping archive")
-	err = compressor.Dump()
+	fmt.Println("[INFO] Compressing to archive")
+	err = compressor.CompressToOutput()
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println("[FATAL] Dump failed")
