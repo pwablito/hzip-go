@@ -75,23 +75,25 @@ func (compressor *Compressor) GenerateScheme() error {
 func (compressor *Compressor) CompressToOutput() error {
 	/*
 		Output looks like this:
+		----------------------------------------------
 		|--- Number of key table entries (64 bits) ---|
-		{
+		for each key table entry {
 			|--- key (1 byte) ---|
 			|--- length (8 bytes) ---|
-			|--- content ($length bytes) ---|
-		} for each key table entry
+			|--- value ($length bits) ---|
+		}
 
 		|--- 0 until edge of byte boundary ---|
 
 		|--- number of inputs (8 bytes) ---|
-		{
+		for each input {
 			|--- length of filename (8 bytes) ---|
 			|--- filename ($length bytes) ---|
 			|--- length of compressed buffer (8 bytes)---|
 			|--- compressed buffer ($length bits) ---|
 			|--- 0 until edge of byte boundary ---|
-		} for each input
+		}
+		----------------------------------------------
 	*/
 	err := compressor.Output.Open()
 	if err != nil {
