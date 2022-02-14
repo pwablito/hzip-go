@@ -73,6 +73,26 @@ func (compressor *Compressor) GenerateScheme() error {
 }
 
 func (compressor *Compressor) CompressToOutput() error {
+	/*
+		Output looks like this:
+		|--- Number of key table entries (64 bits) ---|
+		{
+			|--- key (1 byte) ---|
+			|--- length (8 bytes) ---|
+			|--- content ($length bytes) ---|
+		} for each key table entry
+
+		|--- 0 until edge of byte boundary ---|
+
+		|--- number of inputs (8 bytes) ---|
+		{
+			|--- length of filename (8 bytes) ---|
+			|--- filename ($length bytes) ---|
+			|--- length of compressed buffer (8 bytes)---|
+			|--- compressed buffer ($length bits) ---|
+			|--- 0 until edge of byte boundary ---|
+		} for each input
+	*/
 	err := compressor.Output.Open()
 	if err != nil {
 		fmt.Println(err)
@@ -84,6 +104,28 @@ func (compressor *Compressor) CompressToOutput() error {
 		progressbar.OptionClearOnFinish(),
 		progressbar.OptionSetPredictTime(true),
 	)
+	// Dump key table to output
+	var key_table_buffer bytes.Buffer
+	key_table_writer := bitstream.NewWriter(&key_table_buffer)
+	key_table_writer.WriteBits(uint64(len(compressor.key_table.Table)), 64)
+	for key, value := range compressor.key_table.Table {
+		key_table_writer.WriteByte(key)
+		key_table_writer.WriteBits(uint64(value.Length), 64)
+		reader := bitstream.NewReader(&value.Data)
+		for i := 0; i < value.Length; i++ {
+			bit, err := reader.ReadBit()
+			if err != nil {
+				return errors.New("[ERROR] Failed to read bit from key table entry")
+			}
+			key_table_writer.WriteBit(bit)
+		}
+	}
+	key_table_writer.Flush(bitstream.Zero)
+	compressor.Output.Write(key_table_buffer.Bytes())
+	var num_inputs_buffer bytes.Buffer
+	num_inputs_writer := bitstream.NewWriter(&num_inputs_buffer)
+	num_inputs_writer.WriteBits(uint64(len(compressor.Inputs)), 64)
+	compressor.Output.Write(num_inputs_buffer.Bytes())
 	for _, input_obj := range compressor.Inputs {
 		bar.Add(1)
 		input_data, err := input_obj.GetData()
@@ -141,6 +183,7 @@ func (compressor *Compressor) compress_buffer(input_buffer []byte) (*bytes.Buffe
 			}
 		}
 	}
+	output_writer.Flush(bitstream.Zero)
 	return &output_buffer, total_bits, nil
 }
 

@@ -14,18 +14,18 @@ type KeyTableData struct {
 }
 
 type KeyTable struct {
-	table map[byte]KeyTableData
+	Table map[byte]KeyTableData
 }
 
 func (table *KeyTable) Add(key byte, data bytes.Buffer, length int) {
-	table.table[key] = KeyTableData{
+	table.Table[key] = KeyTableData{
 		Length: length,
 		Data:   data,
 	}
 }
 
 func (table KeyTable) Get(key byte) (*KeyTableData, error) {
-	item, ok := table.table[key]
+	item, ok := table.Table[key]
 	if !ok {
 		return nil, errors.New("couldn't find item")
 	}
