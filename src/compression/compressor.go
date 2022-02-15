@@ -16,14 +16,14 @@ import (
 )
 
 type Compressor struct {
-	Output          output.Output
-	Inputs          []input.Input
-	frequency_table frequency_table.FrequencyTable
-	key_table       key_table.KeyTable
+	Output    output.Output
+	Inputs    []input.Input
+	key_table key_table.KeyTable
 }
 
 func (compressor *Compressor) GenerateScheme() error {
 	fmt.Println("[INFO] Creating frequency table")
+	freq_table := frequency_table.CreateFrequencyTable()
 	bar := progressbar.NewOptions(
 		len(compressor.Inputs),
 		progressbar.OptionClearOnFinish(),
@@ -37,13 +37,13 @@ func (compressor *Compressor) GenerateScheme() error {
 			return errors.New("[ERROR] Failed to read data from input")
 		}
 		for _, current_byte := range data {
-			compressor.frequency_table.Increment(current_byte)
+			freq_table.Increment(current_byte)
 		}
 	}
 	bar.Finish()
 	fmt.Println("[INFO] Constructing Huffman Tree")
 	pq := priority_queue.NewPriorityQueue()
-	for data, frequency := range compressor.frequency_table.GetFrequencies() {
+	for data, frequency := range freq_table.GetFrequencies() {
 		pq.Push(huffman_tree.HtreeQueueItem{
 			Priority: frequency,
 			Tree: &huffman_tree.HuffmanTree{
