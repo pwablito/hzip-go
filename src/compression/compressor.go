@@ -126,6 +126,7 @@ func (compressor *Compressor) CompressToOutput() error {
 	compressor.Output.Write(key_table_buffer.Bytes())
 	var num_inputs_buffer bytes.Buffer
 	num_inputs_writer := bitstream.NewWriter(&num_inputs_buffer)
+	// TODO This doesn't need to be a 64 bit int
 	num_inputs_writer.WriteBits(uint64(len(compressor.Inputs)), 64)
 	compressor.Output.Write(num_inputs_buffer.Bytes())
 	for _, input_obj := range compressor.Inputs {
@@ -141,6 +142,7 @@ func (compressor *Compressor) CompressToOutput() error {
 			return errors.New("[ERROR] Failed to compress buffer")
 		}
 		var meta_buffer bytes.Buffer
+		// TODO Compress filenames too
 		meta_writer := bitstream.NewWriter(&meta_buffer)
 		meta_writer.WriteBits(uint64(len(input_obj.(input.FileInput).Filename)), 64)
 		for _, character := range input_obj.(input.FileInput).Filename {

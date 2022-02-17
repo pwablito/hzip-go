@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"hzip/src/huffman_tree"
 	"hzip/src/key_table"
 	"os"
 
@@ -14,6 +15,7 @@ type Decompressor struct {
 	InputFilename string
 	keytable      key_table.KeyTable
 	reader        *bitstream.BitReader
+	tree          *huffman_tree.HuffmanTree
 }
 
 func (decompressor *Decompressor) ReadMeta() error {
@@ -52,11 +54,19 @@ func (decompressor *Decompressor) ReadMeta() error {
 		val_buffer_writer.Flush(bitstream.Zero)
 		decompressor.keytable.Add(key, val_buffer, int(val_length))
 	}
+	// Flush out the padding bits
 	decompressor.reader.ReadBits(8 - (bits_read % 8))
-	return errors.New("[ERROR] Getting directory structure not implemented")
+	// Now we have the key table, we can convert it to a huffman tree for fast decompression lookups
+	decompressor.tree, err = decompressor.keytable.WriteTree()
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("[ERROR] Failed to generate huffman tree from key table")
+	}
+	return nil
 }
 
 func (decompressor Decompressor) CreateDirectoryStructure() error {
+	// TODO possibly should collect directory structure in ReadMeta
 	return errors.New("[ERROR] Not implemented")
 }
 
