@@ -31,7 +31,8 @@ func main() {
 		fmt.Println("[INFO] Collecting input files")
 		for _, input_filename := range inputs {
 			objs, err := input.ExpandInput(input_filename)
-			// TODO don't allow `..` in filenames so that decompression always makes a subdirectory
+			// TODO make sure all inputs are in a subdirectory of the current directory
+			// TODO if there is only one file, it can be anywhere and will expand to just the object (no dirs)
 			if err != nil {
 				fmt.Println(err)
 				fmt.Println("[FATAL] Input collection failed")
