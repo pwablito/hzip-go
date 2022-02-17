@@ -53,7 +53,7 @@ func (decompressor *Decompressor) ReadMeta() error {
 		decompressor.keytable.Add(key, val_buffer, int(val_length))
 	}
 	decompressor.reader.ReadBits(8 - (bits_read % 8))
-	return nil
+	return errors.New("[ERROR] Getting directory structure not implemented")
 }
 
 func (decompressor Decompressor) CreateDirectoryStructure() error {
