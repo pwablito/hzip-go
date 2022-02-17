@@ -2,6 +2,7 @@ package compression
 
 import (
 	"hzip/src/input"
+	"hzip/src/key_table"
 )
 
 func CreateCompressor() Compressor {
@@ -14,6 +15,7 @@ func CreateCompressor() Compressor {
 func CreateDecompressor(filename string) Decompressor {
 	return Decompressor{
 		InputFilename: filename,
-		keytable:      nil,
+		keytable:      key_table.CreateKeyTable(),
+		reader:        nil,
 	}
 }
