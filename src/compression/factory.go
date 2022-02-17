@@ -11,8 +11,8 @@ func CreateCompressor() Compressor {
 	}
 }
 
-func CreateDecompressor() Decompressor {
+func CreateDecompressor(filename string) Decompressor {
 	return Decompressor{
-		InputFilename: "",
+		InputFilename: filename,
 	}
 }
