@@ -14,5 +14,6 @@ func CreateCompressor() Compressor {
 func CreateDecompressor(filename string) Decompressor {
 	return Decompressor{
 		InputFilename: filename,
+		keytable:      nil,
 	}
 }

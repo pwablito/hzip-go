@@ -65,7 +65,13 @@ func main() {
 		}
 		input_filename := os.Args[2]
 		decompressor := compression.CreateDecompressor(input_filename)
-		err := decompressor.CreateDirectoryStructure()
+		err := decompressor.ReadMeta()
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println("[FATAL] Failed to read metadata from archive")
+			os.Exit(1)
+		}
+		err = decompressor.CreateDirectoryStructure()
 		if err != nil {
 			fmt.Println(err)
 			fmt.Println("[FATAL] Failed to create directory structure")
