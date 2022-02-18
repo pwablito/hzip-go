@@ -60,12 +60,14 @@ func (table *KeyTable) WriteTree() (*huffman_tree.HuffmanTree, error) {
 				if current_node.LeftChild == nil {
 					current_node.LeftChild = &blank_tree_node
 				}
-				current_node = (*current_node.LeftChild).(*huffman_tree.TreeNode)
+				var child huffman_tree.TreeNode = (*current_node.LeftChild).(huffman_tree.TreeNode)
+				current_node = &child
 			} else if bit == bitstream.One { // Right
 				if current_node.LeftChild == nil {
 					current_node.RightChild = &blank_tree_node
 				}
-				current_node = (*current_node.RightChild).(*huffman_tree.TreeNode)
+				var child huffman_tree.TreeNode = (*current_node.RightChild).(huffman_tree.TreeNode)
+				current_node = &child
 			} else {
 				return nil, errors.New("[ERROR] Got invalid bit from key table value")
 			}
@@ -86,7 +88,6 @@ func (table *KeyTable) WriteTree() (*huffman_tree.HuffmanTree, error) {
 		} else {
 			return nil, errors.New("[ERROR] Got invalid bit from key table value")
 		}
-
 	}
 	tree := huffman_tree.HuffmanTree{
 		Head:      tree_head,
