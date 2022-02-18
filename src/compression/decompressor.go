@@ -45,7 +45,7 @@ func (decompressor *Decompressor) ReadMeta() error {
 		val_buffer_writer := bitstream.NewWriter(&val_buffer)
 		for j := 0; j < int(val_length); j++ {
 			current_bit, err := decompressor.reader.ReadBit()
-			bits_read += 1
+			bits_read++
 			if err != nil {
 				return errors.New("[ERROR] Couldn't read value")
 			}
@@ -67,7 +67,56 @@ func (decompressor *Decompressor) ReadMeta() error {
 
 func (decompressor Decompressor) CreateDirectoryStructure() error {
 	// TODO possibly should collect directory structure in ReadMeta
-	return errors.New("[ERROR] Not implemented")
+	file_paths := make([]string, 0)
+	reader := decompressor.reader
+	num_files, err := reader.ReadBits(64)
+	if err != nil {
+		return errors.New("[ERROR] Couldn't get number of files")
+	}
+	for i := 0; i < int(num_files); i++ {
+		bits_read := 0
+		filename_len, err := reader.ReadBits(64)
+		bits_read += 64
+		if err != nil {
+			return errors.New("[ERROR] Couldn't read filename length")
+		}
+		var filename_buffer bytes.Buffer
+		filename_writer := bitstream.NewWriter(&filename_buffer)
+		for j := 0; j < int(filename_len); j++ {
+			byte_obj, err := reader.ReadByte()
+			bits_read += 8
+			if err != nil {
+				return errors.New("[ERROR] Couldn't read filename")
+			}
+			err = filename_writer.WriteByte(byte_obj)
+			if err != nil {
+				return errors.New("[ERROR] Couldn't write filename to buffer")
+			}
+		}
+		file_paths = append(file_paths, filename_buffer.String())
+		// Read past the file contents so we can cleanly get the next filename
+		buffer_len, err := reader.ReadBits(64)
+		bits_read += 64
+		if err != nil {
+			return errors.New("[ERROR] Couldn't read file length")
+		}
+		for j := 0; j < int(buffer_len); j++ {
+			_, err := reader.ReadBit()
+			bits_read++
+			if err != nil {
+				return errors.New("[ERROR] Couldn't seek past file buffer")
+			}
+		}
+		// Reset byte boundary
+		_, err = reader.ReadBits(8 - (bits_read % 8))
+		if err != nil {
+			return errors.New("[ERROR] Couldn't zero out buffer")
+		}
+	}
+	for _, path := range file_paths {
+		fmt.Println(path)
+	}
+	return errors.New("[ERROR] Not fully implemented")
 }
 
 func (decompressor Decompressor) Decompress() error {

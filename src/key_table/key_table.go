@@ -56,21 +56,21 @@ func (table *KeyTable) WriteTree() (*huffman_tree.HuffmanTree, error) {
 				LeftChild:  nil,
 				RightChild: nil,
 			}
+			var next_node huffman_tree.TreeNode
 			if bit == bitstream.Zero { // Left
 				if current_node.LeftChild == nil {
 					current_node.LeftChild = &blank_tree_node
 				}
-				var child huffman_tree.TreeNode = (*current_node.LeftChild).(huffman_tree.TreeNode)
-				current_node = &child
+				next_node = (*current_node.LeftChild).(huffman_tree.TreeNode)
 			} else if bit == bitstream.One { // Right
-				if current_node.LeftChild == nil {
+				if current_node.RightChild == nil {
 					current_node.RightChild = &blank_tree_node
 				}
-				var child huffman_tree.TreeNode = (*current_node.RightChild).(huffman_tree.TreeNode)
-				current_node = &child
+				next_node = (*current_node.RightChild).(huffman_tree.TreeNode)
 			} else {
 				return nil, errors.New("[ERROR] Got invalid bit from key table value")
 			}
+			current_node = &next_node
 		}
 		// current_node is now where we will append a leaf node
 		bit, err := reader.ReadBit()

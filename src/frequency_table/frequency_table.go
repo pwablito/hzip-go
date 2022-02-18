@@ -7,7 +7,7 @@ type FrequencyTable struct {
 func (freq_table *FrequencyTable) Increment(key byte) {
 	_, present := freq_table.frequencies[key]
 	if present {
-		freq_table.frequencies[key] += 1
+		freq_table.frequencies[key]++
 	} else {
 		freq_table.frequencies[key] = 1
 	}
