@@ -108,9 +108,14 @@ func (decompressor Decompressor) CreateDirectoryStructure() error {
 			}
 		}
 		// Reset byte boundary
-		_, err = reader.ReadBits((8 - (bits_read % 8)) % 8)
-		if err != nil {
-			return errors.New("[ERROR] Couldn't zero out buffer")
+		if bits_read%8 != 0 {
+			bits, err := reader.ReadBits((8 - (bits_read % 8)) % 8)
+			if bits > 0 {
+				return errors.New("[ERROR] Expected bits to be zero")
+			}
+			if err != nil {
+				return errors.New("[ERROR] Couldn't zero out buffer")
+			}
 		}
 	}
 	for _, path := range file_paths {
