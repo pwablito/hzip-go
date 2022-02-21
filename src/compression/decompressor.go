@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/dgryski/go-bitstream"
+	"github.com/schollz/progressbar/v3"
 )
 
 type Decompressor struct {
@@ -67,7 +68,7 @@ func (decompressor *Decompressor) ReadMeta() error {
 	return nil
 }
 
-func (decompressor Decompressor) CreateDirectoryStructure() error {
+func (decompressor Decompressor) Decompress() error {
 	// TODO possibly should collect directory structure in ReadMeta
 	file_paths := make([]string, 0)
 	reader := decompressor.reader
@@ -75,7 +76,13 @@ func (decompressor Decompressor) CreateDirectoryStructure() error {
 	if err != nil {
 		return errors.New("[ERROR] Couldn't get number of files")
 	}
+	bar := progressbar.NewOptions(
+		int(num_files),
+		progressbar.OptionClearOnFinish(),
+		progressbar.OptionSetPredictTime(true),
+	)
 	for i := 0; i < int(num_files); i++ {
+		bar.Add(1)
 		bits_read := 0
 		filename_len, err := reader.ReadBits(64)
 		bits_read += 64
@@ -120,12 +127,9 @@ func (decompressor Decompressor) CreateDirectoryStructure() error {
 			}
 		}
 	}
+	bar.Finish()
 	for _, path := range file_paths {
 		fmt.Println(path)
 	}
 	return errors.New("[ERROR] Not fully implemented")
-}
-
-func (decompressor Decompressor) Decompress() error {
-	return errors.New("[ERROR] Not implemented")
 }
