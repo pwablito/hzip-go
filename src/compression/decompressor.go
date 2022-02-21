@@ -55,7 +55,9 @@ func (decompressor *Decompressor) ReadMeta() error {
 		decompressor.keytable.Add(key, val_buffer, int(val_length))
 	}
 	// Flush out the padding bits
-	decompressor.reader.ReadBits((8 - (bits_read % 8)) % 8)
+	if bits_read%8 != 0 {
+		decompressor.reader.ReadBits(8 - (bits_read % 8))
+	}
 	// Now we have the key table, we can convert it to a huffman tree for fast decompression lookups
 	decompressor.tree, err = decompressor.keytable.WriteTree()
 	if err != nil {

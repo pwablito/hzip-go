@@ -181,6 +181,7 @@ func (compressor *Compressor) compress_buffer(input_buffer []byte) (*bytes.Buffe
 				return nil, 0, errors.New("[ERROR] Couldn't read data from reader bitstream")
 			}
 			err = output_writer.WriteBit(next_bit)
+			total_bits++
 			if err != nil {
 				fmt.Println(err)
 				return nil, 0, errors.New("[ERROR] Couldn't write data to writer bitstream")
