@@ -109,7 +109,7 @@ func (decompressor Decompressor) CreateDirectoryStructure() error {
 		}
 		// Reset byte boundary
 		if bits_read%8 != 0 {
-			bits, err := reader.ReadBits((8 - (bits_read % 8)) % 8)
+			bits, err := reader.ReadBits(8 - (bits_read % 8))
 			if bits > 0 {
 				return errors.New("[ERROR] Expected bits to be zero")
 			}

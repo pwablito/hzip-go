@@ -136,7 +136,7 @@ func (compressor *Compressor) CompressToOutput() error {
 			fmt.Println(err)
 			return errors.New("[ERROR] Failed to get data from input")
 		}
-		content_buffer, _, err := compressor.compress_buffer(input_data)
+		content_buffer, compressed_buffer_len, err := compressor.compress_buffer(input_data)
 		if err != nil {
 			fmt.Println(err)
 			return errors.New("[ERROR] Failed to compress buffer")
@@ -148,7 +148,7 @@ func (compressor *Compressor) CompressToOutput() error {
 		for _, character := range input_obj.(input.FileInput).Filename {
 			meta_writer.WriteByte(byte(character))
 		}
-		meta_writer.WriteBits(uint64(content_buffer.Len()), 64)
+		meta_writer.WriteBits(uint64(compressed_buffer_len), 64)
 		err = compressor.Output.Write(meta_buffer.Bytes())
 		if err != nil {
 			fmt.Println(err)
