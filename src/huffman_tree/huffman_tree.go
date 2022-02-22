@@ -29,10 +29,10 @@ func (tree *HuffmanTree) Lookup(buf bytes.Buffer, length int) (byte, bool, error
 			return 0, false, errors.New("[ERROR] Buffer overflow")
 		}
 		if bit == bitstream.One { // right
-			current_node = *current_node.(TreeNode).LeftChild
-		} else if bit == bitstream.Zero {
 			current_node = *current_node.(TreeNode).RightChild
-		} else { // left
+		} else if bit == bitstream.Zero { // left
+			current_node = *current_node.(TreeNode).LeftChild
+		} else {
 			return 0, false, errors.New("[ERROR] Invalid bit")
 		}
 	}

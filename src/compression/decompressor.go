@@ -109,24 +109,51 @@ func (decompressor Decompressor) Decompress() error {
 		if err != nil {
 			return errors.New("[ERROR] Couldn't read file length")
 		}
-		var current_chunk bytes.Buffer
+		// initialize current_chunk
+		var current_chunk bytes.Buffer = *bytes.NewBuffer(make([]byte, 0))
 		current_chunk_writer := bitstream.NewWriter(&current_chunk)
 		current_chunk_len := 0
-		var decompressed_buffer bytes.Buffer
-		// decompressed_buffer_writer := bitstream.NewWriter(&decompressed_buffer)
+		var decompressed_buffer bytes.Buffer = *bytes.NewBuffer(make([]byte, 0))
+		decompressed_buffer_writer := bitstream.NewWriter(&decompressed_buffer)
 		for j := 0; j < int(buffer_len); j++ {
+			// Get a bit from the compressed buffer
 			bit, err := reader.ReadBit()
 			bits_read++
 			if err != nil {
 				return errors.New("[ERROR] Couldn't seek past file buffer")
 			}
+			// Write bit to current chunk
 			current_chunk_writer.WriteBit(bit)
+			// Increment length
 			current_chunk_len++
+			// Fill the rest with 0s
 			current_chunk_writer.Flush(bitstream.Zero)
-			// TODO call decompressor.tree.Lookup(current_chunk, current_chunk_len)
-			var new_buffer bytes.Buffer
-			new_writer := bitstream.NewWriter(&new_buffer)
-			new_writer.Flush(bitstream.Zero)
+			// Perform htree lookup
+			data, found_leaf, err := decompressor.tree.Lookup(current_chunk, current_chunk_len)
+			if err != nil {
+				fmt.Println(err)
+				return errors.New("[ERROR] Overflow occurred")
+			}
+			if !found_leaf {
+				// Create a new buffer
+				var new_buffer bytes.Buffer = *bytes.NewBuffer(make([]byte, 0))
+				new_writer := bitstream.NewWriter(&new_buffer)
+				current_chunk_reader := bitstream.NewReader(&current_chunk)
+				// Copy current_chunk to new_buffer with no padding
+				for k := 0; k < current_chunk_len; k++ {
+					bit, err = current_chunk_reader.ReadBit()
+					if err != nil {
+						return errors.New("[ERROR] Couldn't transfer data")
+					}
+					new_writer.WriteBit(bit)
+				}
+				current_chunk = new_buffer
+				current_chunk_writer = bitstream.NewWriter(&current_chunk)
+			} else {
+				decompressed_buffer_writer.WriteByte(data)
+				current_chunk = *bytes.NewBuffer(make([]byte, 0))
+				current_chunk_writer = bitstream.NewWriter(&current_chunk)
+			}
 		}
 		// Create and write file
 		dirpath := filepath.Dir(filename_buffer.String()) // split here
