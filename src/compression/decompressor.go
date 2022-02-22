@@ -7,6 +7,7 @@ import (
 	"hzip/src/huffman_tree"
 	"hzip/src/key_table"
 	"os"
+	"path/filepath"
 
 	"github.com/dgryski/go-bitstream"
 	"github.com/schollz/progressbar/v3"
@@ -70,7 +71,6 @@ func (decompressor *Decompressor) ReadMeta() error {
 
 func (decompressor Decompressor) Decompress() error {
 	// TODO possibly should collect directory structure in ReadMeta
-	file_paths := make([]string, 0)
 	reader := decompressor.reader
 	num_files, err := reader.ReadBits(64)
 	if err != nil {
@@ -102,20 +102,45 @@ func (decompressor Decompressor) Decompress() error {
 				return errors.New("[ERROR] Couldn't write filename to buffer")
 			}
 		}
-		file_paths = append(file_paths, filename_buffer.String())
+
 		// Read past the file contents so we can cleanly get the next filename
 		buffer_len, err := reader.ReadBits(64)
 		bits_read += 64
 		if err != nil {
 			return errors.New("[ERROR] Couldn't read file length")
 		}
+		var current_chunk bytes.Buffer
+		current_chunk_writer := bitstream.NewWriter(&current_chunk)
+		current_chunk_len := 0
+		var decompressed_buffer bytes.Buffer
+		// decompressed_buffer_writer := bitstream.NewWriter(&decompressed_buffer)
 		for j := 0; j < int(buffer_len); j++ {
-			_, err := reader.ReadBit()
+			bit, err := reader.ReadBit()
 			bits_read++
 			if err != nil {
 				return errors.New("[ERROR] Couldn't seek past file buffer")
 			}
+			current_chunk_writer.WriteBit(bit)
+			current_chunk_len++
+			current_chunk_writer.Flush(bitstream.Zero)
+			// TODO call decompressor.tree.Lookup(current_chunk, current_chunk_len)
+			var new_buffer bytes.Buffer
+			new_writer := bitstream.NewWriter(&new_buffer)
+			new_writer.Flush(bitstream.Zero)
 		}
+		// Create and write file
+		dirpath := filepath.Dir(filename_buffer.String()) // split here
+		err = os.MkdirAll(dirpath, 0o755)                 // TODO track modes in archive
+		if err != nil {
+			return errors.New("[ERROR] Couldn't create directory " + dirpath)
+		}
+		file, err := os.Create(filename_buffer.String())
+		if err != nil {
+			return errors.New("[ERROR] Couldn't open file " + filename_buffer.String())
+		}
+		file.Write(decompressed_buffer.Bytes())
+		file.Close()
+
 		// Reset byte boundary
 		if bits_read%8 != 0 {
 			bits, err := reader.ReadBits(8 - (bits_read % 8))
@@ -128,8 +153,5 @@ func (decompressor Decompressor) Decompress() error {
 		}
 	}
 	bar.Finish()
-	for _, path := range file_paths {
-		fmt.Println(path)
-	}
 	return errors.New("[ERROR] Not fully implemented")
 }

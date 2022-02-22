@@ -12,13 +12,13 @@ type HuffmanTree struct {
 	Frequency int
 }
 
-func (tree *HuffmanTree) Lookup(buf *bytes.Buffer, length int) (byte, bool, error) {
+func (tree *HuffmanTree) Lookup(buf bytes.Buffer, length int) (byte, bool, error) {
 	/*
 		If found, return (data, true, nil)
 		If not overflow but not target leaf, return (0, false, nil)
 		If overflow return (0, false, error)
 	*/
-	reader := bitstream.NewReader(buf)
+	reader := bitstream.NewReader(&buf)
 	var current_node HTreeNode = tree.Head
 	for i := 0; i < length; i++ {
 		if current_node.IsLeaf() {
