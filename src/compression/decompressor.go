@@ -180,5 +180,5 @@ func (decompressor Decompressor) Decompress() error {
 		}
 	}
 	bar.Finish()
-	return errors.New("[ERROR] Not fully implemented")
+	return nil
 }
