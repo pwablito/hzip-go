@@ -18,28 +18,39 @@ func (tree *HuffmanTree) Lookup(buf bytes.Buffer, length int) (byte, bool, error
 		If not overflow but not target leaf, return (0, false, nil)
 		If overflow return (0, false, error)
 	*/
-	reader := bitstream.NewReader(&buf)
-	var current_node HTreeNode = tree.Head
-	for i := 0; i < length; i++ {
-		if current_node.IsLeaf() {
-			return 0, false, errors.New("[ERROR] Tree overflow")
+	return _lookup(tree.Head, &buf, length)
+}
+
+func _lookup(node HTreeNode, buf *bytes.Buffer, length int) (byte, bool, error) {
+	if length == 0 {
+		if !node.IsLeaf() {
+			return 0, false, nil
 		}
-		bit, err := reader.ReadBit()
-		if err != nil {
-			return 0, false, errors.New("[ERROR] Buffer overflow")
-		}
-		if bit == bitstream.One { // right
-			current_node = *current_node.(TreeNode).RightChild
-		} else if bit == bitstream.Zero { // left
-			current_node = *current_node.(TreeNode).LeftChild
-		} else {
-			return 0, false, errors.New("[ERROR] Invalid bit")
-		}
+		return node.Data(), true, nil
 	}
-	if !current_node.IsLeaf() {
-		return 0, false, nil
+	if node.IsLeaf() {
+		return 0, false, errors.New("[ERROR] Tree overflow")
 	}
-	return current_node.Data(), true, nil
+	node_as_tree := node.(TreeNode)
+	buf_reader := bitstream.NewReader(buf)
+	bit, err := buf_reader.ReadBit()
+	var next_buffer bytes.Buffer
+	next_buffer_writer := bitstream.NewWriter(&next_buffer)
+	for i := 0; i < length-1; i++ {
+		next_bit, _ := buf_reader.ReadBit()
+		next_buffer_writer.WriteBit(next_bit)
+	}
+	next_buffer_writer.Flush(bitstream.Zero)
+	if err != nil {
+		return 0, false, errors.New("[ERROR] Buffer overflow")
+	}
+	if bit == bitstream.One {
+		return _lookup(*(node_as_tree.Right()), &next_buffer, length-1)
+	} else if bit == bitstream.Zero {
+		return _lookup(*(node_as_tree.Left()), &next_buffer, length-1)
+	} else {
+		return 0, false, errors.New("[ERROR] Invalid bit")
+	}
 }
 
 type HTreeNode interface {
