@@ -19,18 +19,18 @@ func main() {
 			fmt.Println("[FATAL] Arguments to compress missing")
 			os.Exit(1)
 		}
-		output_filename := os.Args[2]
+		outputFilename := os.Args[2]
 		inputs := os.Args[3:]
 
 		compressor := compression.CreateCompressor()
 
 		compressor.SetOutput(&output.FileOutput{
-			Filename: output.GetOutputFilename(output_filename),
+			Filename: output.GetOutputFilename(outputFilename),
 			Mode:     0666,
 		})
 		fmt.Println("[INFO] Collecting input files")
-		for _, input_filename := range inputs {
-			objs, err := input.ExpandInput(input_filename)
+		for _, inputFilename := range inputs {
+			objs, err := input.ExpandInput(inputFilename)
 			// TODO make sure all inputs are in a subdirectory of the current directory
 			// TODO if there is only one file, it can be anywhere and will expand to just the object (no dirs)
 			if err != nil {
@@ -38,8 +38,8 @@ func main() {
 				fmt.Println("[FATAL] Input collection failed")
 				os.Exit(1)
 			}
-			for _, input_obj := range objs {
-				compressor.AddInput(input_obj)
+			for _, inputObj := range objs {
+				compressor.AddInput(inputObj)
 			}
 		}
 		// TODO Remove duplicate inputs
@@ -64,8 +64,8 @@ func main() {
 			fmt.Println("[FATAL] Must supply an archive as an argument")
 			os.Exit(1)
 		}
-		input_filename := os.Args[2]
-		decompressor := compression.CreateDecompressor(input_filename)
+		inputFilename := os.Args[2]
+		decompressor := compression.CreateDecompressor(inputFilename)
 		err := decompressor.ReadMeta()
 		if err != nil {
 			fmt.Println(err)

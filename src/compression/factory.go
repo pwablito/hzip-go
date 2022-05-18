@@ -15,7 +15,7 @@ func CreateCompressor() Compressor {
 func CreateDecompressor(filename string) Decompressor {
 	return Decompressor{
 		InputFilename: filename,
-		keytable:      key_table.CreateKeyTable(),
+		keyTable:      key_table.CreateKeyTable(),
 		reader:        nil,
 	}
 }

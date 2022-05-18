@@ -15,7 +15,7 @@ import (
 
 type Decompressor struct {
 	InputFilename string
-	keytable      key_table.KeyTable
+	keyTable      key_table.KeyTable
 	reader        *bitstream.BitReader
 	tree          *huffman_tree.HuffmanTree
 }
@@ -25,43 +25,52 @@ func (decompressor *Decompressor) ReadMeta() error {
 	if err != nil {
 		return errors.New("Couldn't open archive: " + decompressor.InputFilename)
 	}
-	bits_read := 0
+	bitsRead := 0
 	decompressor.reader = bitstream.NewReader(file)
-	num_table_entries, err := decompressor.reader.ReadBits(64)
-	bits_read += 64
+	numTableEntries, err := decompressor.reader.ReadBits(64)
+	bitsRead += 64
 	if err != nil {
 		fmt.Println("[ERROR] Couldn't read table size")
 	}
-	for i := 0; i < int(num_table_entries); i++ {
+	for i := 0; i < int(numTableEntries); i++ {
 		key, err := decompressor.reader.ReadByte()
-		bits_read += 8
+		bitsRead += 8
 		if err != nil {
 			return errors.New("[ERROR] Couldn't read key")
 		}
-		val_length, err := decompressor.reader.ReadBits(64)
-		bits_read += 64
+		valLength, err := decompressor.reader.ReadBits(64)
+		bitsRead += 64
 		if err != nil {
 			return errors.New("[ERROR] Couldn't read length")
 		}
-		var val_buffer bytes.Buffer
-		val_buffer_writer := bitstream.NewWriter(&val_buffer)
-		for j := 0; j < int(val_length); j++ {
-			current_bit, err := decompressor.reader.ReadBit()
-			bits_read++
+		var valBuffer bytes.Buffer
+		valBufferWriter := bitstream.NewWriter(&valBuffer)
+		for j := 0; j < int(valLength); j++ {
+			currentBit, err := decompressor.reader.ReadBit()
+			bitsRead++
 			if err != nil {
 				return errors.New("[ERROR] Couldn't read value")
 			}
-			val_buffer_writer.WriteBit(current_bit)
+			err = valBufferWriter.WriteBit(currentBit)
+			if err != nil {
+				return errors.New("[ERROR] Failed to write bit to stream")
+			}
 		}
-		val_buffer_writer.Flush(bitstream.Zero)
-		decompressor.keytable.Add(key, val_buffer, int(val_length))
+		err = valBufferWriter.Flush(bitstream.Zero)
+		if err != nil {
+			return errors.New("[ERROR] Failed to flush bitstream")
+		}
+		decompressor.keyTable.Add(key, valBuffer, int(valLength))
 	}
 	// Flush out the padding bits
-	if bits_read%8 != 0 {
-		decompressor.reader.ReadBits(8 - (bits_read % 8))
+	if bitsRead%8 != 0 {
+		_, err := decompressor.reader.ReadBits(8 - (bitsRead % 8))
+		if err != nil {
+			return errors.New("[ERROR] Failed to flush bits by reading")
+		}
 	}
 	// Now we have the key table, we can convert it to a huffman tree for fast decompression lookups
-	decompressor.tree, err = decompressor.keytable.WriteTree()
+	decompressor.tree, err = decompressor.keyTable.WriteTree()
 	if err != nil {
 		fmt.Println(err)
 		return errors.New("[ERROR] Failed to generate huffman tree from key table")
@@ -72,105 +81,126 @@ func (decompressor *Decompressor) ReadMeta() error {
 func (decompressor Decompressor) Decompress() error {
 	// TODO possibly should collect directory structure in ReadMeta
 	reader := decompressor.reader
-	num_files, err := reader.ReadBits(64)
+	numFiles, err := reader.ReadBits(64)
 	if err != nil {
 		return errors.New("[ERROR] Couldn't get number of files")
 	}
 	bar := progressbar.NewOptions(
-		int(num_files),
+		int(numFiles),
 		progressbar.OptionClearOnFinish(),
 		progressbar.OptionSetPredictTime(true),
 	)
-	for i := 0; i < int(num_files); i++ {
-		bar.Add(1)
-		bits_read := 0
-		filename_len, err := reader.ReadBits(64)
-		bits_read += 64
+	for i := 0; i < int(numFiles); i++ {
+		err := bar.Add(1)
+		if err != nil {
+			return errors.New("[ERROR] Failed to modify progress bar status")
+		}
+		bitsRead := 0
+		filenameLen, err := reader.ReadBits(64)
+		bitsRead += 64
 		if err != nil {
 			return errors.New("[ERROR] Couldn't read filename length")
 		}
-		var filename_buffer bytes.Buffer
-		filename_writer := bitstream.NewWriter(&filename_buffer)
-		for j := 0; j < int(filename_len); j++ {
-			byte_obj, err := reader.ReadByte()
-			bits_read += 8
+		var filenameBuffer bytes.Buffer
+		filenameWriter := bitstream.NewWriter(&filenameBuffer)
+		for j := 0; j < int(filenameLen); j++ {
+			byteObj, err := reader.ReadByte()
+			bitsRead += 8
 			if err != nil {
 				return errors.New("[ERROR] Couldn't read filename")
 			}
-			err = filename_writer.WriteByte(byte_obj)
+			err = filenameWriter.WriteByte(byteObj)
 			if err != nil {
 				return errors.New("[ERROR] Couldn't write filename to buffer")
 			}
 		}
 
-		// Read past the file contents so we can cleanly get the next filename
-		buffer_len, err := reader.ReadBits(64)
-		bits_read += 64
+		// Read past the file contents, so we can cleanly get the next filename
+		bufferLen, err := reader.ReadBits(64)
+		bitsRead += 64
 		if err != nil {
 			return errors.New("[ERROR] Couldn't read file length")
 		}
 		// initialize current_chunk
-		var current_chunk bytes.Buffer = *bytes.NewBuffer(make([]byte, 0))
-		current_chunk_writer := bitstream.NewWriter(&current_chunk)
-		current_chunk_len := 0
-		var decompressed_buffer bytes.Buffer = *bytes.NewBuffer(make([]byte, 0))
-		decompressed_buffer_writer := bitstream.NewWriter(&decompressed_buffer)
-		for j := 0; j < int(buffer_len); j++ {
+		var currentChunk bytes.Buffer = *bytes.NewBuffer(make([]byte, 0))
+		currentChunkWriter := bitstream.NewWriter(&currentChunk)
+		currentChunkLen := 0
+		var decompressedBuffer bytes.Buffer = *bytes.NewBuffer(make([]byte, 0))
+		decompressedBufferWriter := bitstream.NewWriter(&decompressedBuffer)
+		for j := 0; j < int(bufferLen); j++ {
 			// Get a bit from the compressed buffer
 			bit, err := reader.ReadBit()
-			bits_read++
+			bitsRead++
 			if err != nil {
 				return errors.New("[ERROR] Couldn't seek past file buffer")
 			}
 			// Write bit to current chunk
-			current_chunk_writer.WriteBit(bit)
+			err = currentChunkWriter.WriteBit(bit)
+			if err != nil {
+				return errors.New("[ERROR] Failed to write bit to stream")
+			}
 			// Increment length
-			current_chunk_len++
+			currentChunkLen++
 			// Fill the rest with 0s
-			current_chunk_writer.Flush(bitstream.Zero)
+			err = currentChunkWriter.Flush(bitstream.Zero)
+			if err != nil {
+				return errors.New("[ERROR] Failed to flush bitstream")
+			}
 			// Perform htree lookup
-			data, found_leaf, err := decompressor.tree.Lookup(current_chunk, current_chunk_len)
+			data, foundLeaf, err := decompressor.tree.Lookup(currentChunk, currentChunkLen)
 			if err != nil {
 				fmt.Println(err)
 				return errors.New("[ERROR] Overflow occurred")
 			}
-			if !found_leaf {
+			if foundLeaf {
+				err := decompressedBufferWriter.WriteByte(data)
+				if err != nil {
+					return errors.New("[ERROR] Failed to write byte to decompressed buffer")
+				}
+				currentChunk = *bytes.NewBuffer(make([]byte, 0))
+				currentChunkWriter = bitstream.NewWriter(&currentChunk)
+			} else {
 				// Create a new buffer
-				var new_buffer bytes.Buffer = *bytes.NewBuffer(make([]byte, 0))
-				new_writer := bitstream.NewWriter(&new_buffer)
-				current_chunk_reader := bitstream.NewReader(&current_chunk)
+				var newBuffer bytes.Buffer = *bytes.NewBuffer(make([]byte, 0))
+				newWriter := bitstream.NewWriter(&newBuffer)
+				currentChunkReader := bitstream.NewReader(&currentChunk)
 				// Copy current_chunk to new_buffer with no padding
-				for k := 0; k < current_chunk_len; k++ {
-					bit, err = current_chunk_reader.ReadBit()
+				for k := 0; k < currentChunkLen; k++ {
+					bit, err = currentChunkReader.ReadBit()
 					if err != nil {
 						return errors.New("[ERROR] Couldn't transfer data")
 					}
-					new_writer.WriteBit(bit)
+					err := newWriter.WriteBit(bit)
+					if err != nil {
+						return errors.New("[ERROR] Failed to write bit to stream")
+					}
 				}
-				current_chunk = new_buffer
-				current_chunk_writer = bitstream.NewWriter(&current_chunk)
-			} else {
-				decompressed_buffer_writer.WriteByte(data)
-				current_chunk = *bytes.NewBuffer(make([]byte, 0))
-				current_chunk_writer = bitstream.NewWriter(&current_chunk)
+				currentChunk = newBuffer
+				currentChunkWriter = bitstream.NewWriter(&currentChunk)
 			}
 		}
 		// Create and write file
-		dirpath := filepath.Dir(filename_buffer.String()) // split here
-		err = os.MkdirAll(dirpath, 0o755)                 // TODO track modes in archive
+		dirPath := filepath.Dir(filenameBuffer.String()) // split here
+		err = os.MkdirAll(dirPath, 0o755)                // TODO track modes in archive
 		if err != nil {
-			return errors.New("[ERROR] Couldn't create directory " + dirpath)
+			return errors.New("[ERROR] Couldn't create directory " + dirPath)
 		}
-		file, err := os.Create(filename_buffer.String())
+		file, err := os.Create(filenameBuffer.String())
 		if err != nil {
-			return errors.New("[ERROR] Couldn't open file " + filename_buffer.String())
+			return errors.New("[ERROR] Couldn't open file " + filenameBuffer.String())
 		}
-		file.Write(decompressed_buffer.Bytes())
-		file.Close()
+		_, err = file.Write(decompressedBuffer.Bytes())
+		if err != nil {
+			return errors.New("[ERROR] Failed to write to file")
+		}
+		err = file.Close()
+		if err != nil {
+			return errors.New("[ERROR] Failed to close file")
+		}
 
 		// Reset byte boundary
-		if bits_read%8 != 0 {
-			bits, err := reader.ReadBits(8 - (bits_read % 8))
+		if bitsRead%8 != 0 {
+			bits, err := reader.ReadBits(8 - (bitsRead % 8))
 			if bits > 0 {
 				return errors.New("[ERROR] Expected bits to be zero")
 			}
@@ -179,6 +209,9 @@ func (decompressor Decompressor) Decompress() error {
 			}
 		}
 	}
-	bar.Finish()
+	err = bar.Finish()
+	if err != nil {
+		return errors.New("[ERROR] Failed to cleanly finish progress bar")
+	}
 	return nil
 }

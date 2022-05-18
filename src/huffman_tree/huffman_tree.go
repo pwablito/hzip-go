@@ -31,23 +31,32 @@ func _lookup(node HTreeNode, buf *bytes.Buffer, length int) (byte, bool, error) 
 	if node.IsLeaf() {
 		return 0, false, errors.New("[ERROR] Tree overflow")
 	}
-	node_as_tree := node.(TreeNode)
-	buf_reader := bitstream.NewReader(buf)
-	bit, err := buf_reader.ReadBit()
-	var next_buffer bytes.Buffer
-	next_buffer_writer := bitstream.NewWriter(&next_buffer)
-	for i := 0; i < length-1; i++ {
-		next_bit, _ := buf_reader.ReadBit()
-		next_buffer_writer.WriteBit(next_bit)
+	nodeAsTree := node.(TreeNode)
+	bufReader := bitstream.NewReader(buf)
+	bit, err := bufReader.ReadBit()
+	if err != nil {
+		return 0, false, errors.New("[ERROR] Failed to read bit from buffer")
 	}
-	next_buffer_writer.Flush(bitstream.Zero)
+	var nextBuffer bytes.Buffer
+	nextBufferWriter := bitstream.NewWriter(&nextBuffer)
+	for i := 0; i < length-1; i++ {
+		nextBit, _ := bufReader.ReadBit()
+		err := nextBufferWriter.WriteBit(nextBit)
+		if err != nil {
+			return 0, false, errors.New("[ERROR] Failed to write to temporary buffer")
+		}
+	}
+	err = nextBufferWriter.Flush(bitstream.Zero)
+	if err != nil {
+		return 0, false, errors.New("[ERROR] Failed to flush buffer")
+	}
 	if err != nil {
 		return 0, false, errors.New("[ERROR] Buffer overflow")
 	}
 	if bit == bitstream.One {
-		return _lookup(*(node_as_tree.Right()), &next_buffer, length-1)
+		return _lookup(*(nodeAsTree.Right()), &nextBuffer, length-1)
 	} else if bit == bitstream.Zero {
-		return _lookup(*(node_as_tree.Left()), &next_buffer, length-1)
+		return _lookup(*(nodeAsTree.Left()), &nextBuffer, length-1)
 	} else {
 		return 0, false, errors.New("[ERROR] Invalid bit")
 	}
@@ -61,20 +70,20 @@ type HTreeNode interface {
 	Right() *HTreeNode
 }
 
-func CombineTrees(tree_1 *HuffmanTree, tree_2 *HuffmanTree) *HuffmanTree {
-	new_tree := HuffmanTree{
-		Frequency: tree_1.Frequency + tree_2.Frequency,
+func CombineTrees(tree1 *HuffmanTree, tree2 *HuffmanTree) *HuffmanTree {
+	newTree := HuffmanTree{
+		Frequency: tree1.Frequency + tree2.Frequency,
 	}
-	head_node := TreeNode{}
-	if tree_1.Frequency < tree_2.Frequency {
-		head_node.LeftChild = &tree_1.Head
-		head_node.RightChild = &tree_2.Head
+	headNode := TreeNode{}
+	if tree1.Frequency < tree2.Frequency {
+		headNode.LeftChild = &tree1.Head
+		headNode.RightChild = &tree2.Head
 	} else {
-		head_node.LeftChild = &tree_2.Head
-		head_node.RightChild = &tree_1.Head
+		headNode.LeftChild = &tree2.Head
+		headNode.RightChild = &tree1.Head
 	}
-	new_tree.Head = head_node
-	return &new_tree
+	newTree.Head = headNode
+	return &newTree
 }
 
 type LeafNode struct {
